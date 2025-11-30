@@ -36,6 +36,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần truy cập camera để quét mã QR thiết bị</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần truy cập microphone để sử dụng camera</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
