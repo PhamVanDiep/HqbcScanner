@@ -4,6 +4,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import DeviceFormScreen from '../screens/DeviceFormScreen';
 import type {Field} from '../types';
+import DeviceScreen from '../screens/DeviceScreen';
 
 export type RootStackParamList = {
   QRScanner: undefined;
@@ -20,7 +21,7 @@ const Navigation = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="QRScanner"
+        initialRouteName="DeviceScreen"
         screenOptions={{
           headerStyle: {
             backgroundColor: '#007AFF',
@@ -44,6 +45,14 @@ const Navigation = () => {
           options={{
             title: 'Thông tin thiết bị',
             headerShown: false, // Using custom header in DeviceFormScreen
+          }}
+        />
+        <Stack.Screen
+          name="DeviceScreen"
+          component={DeviceScreen}
+          options={{
+            title: 'Thông tin thiết bị',
+            headerShown: false, // Using custom header in DeviceScreen
           }}
         />
       </Stack.Navigator>
