@@ -4,14 +4,14 @@ import { ITsvhDatumId } from './ITsvhDatumId';
 
 export interface ITsvhDatum {
   id?: ITsvhDatumId;
-  ngay?: string;
+  ngay?: any;
   gio?: number;
   phut?: number;
   giaTri?: number;
   nguoiNhap?: string;
-  thoiDiemNhap?: string;
+  thoiDiemNhap?: any;
   nguoiSua?: string;
-  thoiDiemSua?: string;
+  thoiDiemSua?: any;
   thietBi?: IThietBi;
   thongSo?: IThongSo;
 }

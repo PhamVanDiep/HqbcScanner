@@ -1,4 +1,4 @@
 export interface ITsvhDatumId {
   maThongSoTb?: string;
-  ngayGio?: string;
+  ngayGio?: any;
 }

@@ -17,3 +17,5 @@ class VanHanhService {
         return response;
     }
 }
+
+export default new VanHanhService();

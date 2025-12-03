@@ -1,3 +1,5 @@
+import { IThongSo } from "./IThongSo";
+
 export interface IThietBi {
   maThietBi?: string;
   maThietBiCha?: string;
@@ -7,4 +9,5 @@ export interface IThietBi {
   qrCodePath?: string;
   maNhaMay?: string;
   stt?: number;
+  thongSos?: IThongSo[];
 }
