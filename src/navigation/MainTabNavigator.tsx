@@ -12,6 +12,7 @@ import {IThietBi} from '../types';
 export type TabParamList = {
   DeviceTab: {
     device?: IThietBi;
+    devices?: IThietBi[];
   } | undefined;
   QRTab: undefined;
   UserTab: undefined;

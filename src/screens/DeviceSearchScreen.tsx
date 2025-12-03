@@ -25,7 +25,7 @@ const DeviceSearchScreen: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [totalElements, setTotalElements] = useState(0);
 
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 50;
   const DEBOUNCE_TIME = 500; // 500ms debounce
 
   useEffect(() => {

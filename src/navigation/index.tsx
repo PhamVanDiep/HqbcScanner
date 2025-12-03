@@ -2,10 +2,9 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRScannerScreen from '../screens/QRScannerScreen';
-import DeviceFormScreen from '../screens/DeviceFormScreen';
 import DeviceSearchScreen from '../screens/DeviceSearchScreen';
 import MainTabNavigator from './MainTabNavigator';
-import type {Field, IThietBi} from '../types';
+import type {IThietBi} from '../types';
 
 export type RootStackParamList = {
   MainTabs: {
@@ -18,7 +17,6 @@ export type RootStackParamList = {
   DeviceForm: {
     deviceId: string;
     deviceName: string;
-    fields: Field[];
   };
   DeviceSearchScreen: undefined;
 };
@@ -61,14 +59,14 @@ const Navigation = () => {
             headerShown: false,
           }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name="DeviceForm"
           component={DeviceFormScreen}
           options={{
             title: 'Thông tin thiết bị',
             headerShown: false,
           }}
-        />
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

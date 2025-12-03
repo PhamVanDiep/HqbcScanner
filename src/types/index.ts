@@ -2,7 +2,7 @@ import { IQUser } from './IQUser';
 import { ITsvhDatum } from './ITsvhDatum';
 
 export interface QRCodeData {
-  qrCode: string;
+  QR_CODE: string;
 }
 
 export type FieldType = 'text' | 'number' | 'textarea' | 'select' | 'date';

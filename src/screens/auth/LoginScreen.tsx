@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Image, // thêm import Image
 } from 'react-native';
 import {useAuth} from '../../contexts/AuthContext';
 import {BiometricUtils} from '../../utils/biometric';
@@ -78,7 +79,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* <Icon name="store" size={80} color="#2196F3" /> */}
+        {/* Logo EVN */}
+        <Image
+          source={require('../../../assets/evn_logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        {/* Tên công ty */}
+        <Text style={styles.companyName}>
+          Công ty Thủy điện
+        </Text>
+        <Text style={styles.companyName}>
+          Huội Quảng - Bản Chát
+        </Text>
         <Text style={styles.title}>Quản lý vận hành thiết bị</Text>
         {/* <Text style={styles.subtitle}>Quản lý cửa hàng thông minh</Text> */}
       </View>
@@ -182,10 +195,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+  },
+  companyName: {
+    fontSize: 24,
     color: '#333',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#005bac',
     marginTop: 20,
   },
   subtitle: {

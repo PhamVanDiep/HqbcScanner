@@ -22,13 +22,22 @@ interface DeviceScreenProps {
   route?: any;
 }
 
+interface DeviceParameters {
+  [deviceId: string]: IThongSo[];
+}
+
+interface ParameterValues {
+  [deviceId: string]: { [parameterId: string]: any };
+}
+
 const DeviceScreen: React.FC<DeviceScreenProps> = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [devices, setDevices] = useState<IThietBi[]>([]);
-  const [parameters, setParameters] = useState<IThongSo[]>([]);
-  const [parameterValues, setParameterValues] = useState<{ [key: string]: any }>({});
+  const [deviceParameters, setDeviceParameters] = useState<DeviceParameters>({});
+  const [parameterValues, setParameterValues] = useState<ParameterValues>({});
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -38,43 +47,50 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
     if (route.params?.device) {
       const selectedDevice = route.params.device as IThietBi;
       setDevices([selectedDevice]);
-      loadDeviceParameters(selectedDevice.maThietBi);
+      loadDeviceParametersAndHistory([selectedDevice]);
     } else if (route.params?.devices) {
       // Multiple devices from QR scan
       const selectedDevices = route.params.devices as IThietBi[];
       setDevices(selectedDevices);
-      // Load parameters for first device
-      if (selectedDevices.length > 0) {
-        loadDeviceParameters(selectedDevices[0].maThietBi);
-      }
+      loadDeviceParametersAndHistory(selectedDevices);
     }
   }, [route.params]);
 
   useEffect(() => {
-    // Load history data when date changes
+    // Load history data when date changes (but not on initial mount)
     if (devices.length > 0) {
       loadHistoryData();
     }
   }, [selectedDate, devices]);
 
-  const loadDeviceParameters = async (maThietBi?: string) => {
-    if (!maThietBi) return;
-
-    setLoading(true);
+  const loadDeviceParametersAndHistory = async (devicesToLoad: IThietBi[]) => {
+    setInitialLoading(true);
     try {
-      const deviceDetail = await ThietBiService.findById(maThietBi);
+      // Load parameters for all devices first
+      const paramPromises = devicesToLoad.map(device =>
+        ThietBiService.findById(device.maThietBi).then(deviceDetail => ({
+          deviceId: device.maThietBi,
+          parameters: deviceDetail.thongSos || [],
+        }))
+      );
 
-      // Set parameters if available
-      if (deviceDetail.thongSos && deviceDetail.thongSos.length > 0) {
-        setParameters(deviceDetail.thongSos);
-      } else {
-        setParameters([]);
-      }
+      const results = await Promise.all(paramPromises);
+
+      // Update device parameters with all loaded data
+      const newParams: DeviceParameters = {};
+      results.forEach(result => {
+        if (result.parameters.length > 0) {
+          newParams[result.deviceId] = result.parameters;
+        }
+      });
+
+      setDeviceParameters(newParams);
+
+      // Then load history data
+      await loadHistoryData();
     } catch (error) {
-      console.error('Load parameters error:', error);
-      setParameters([]);
-    } finally {
-      setLoading(false);
+      console.error('Load device parameters error:', error);
+      setInitialLoading(false);
     }
   };
 
@@ -90,57 +106,75 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
         maThietBis: maThietBis,
       });
 
-      // Process history data - extract devices, parameters, and values
+      // Process history data - organize by device
       if (response.data && response.data.length > 0) {
         const historyList = response.data;
+        
+        // Group parameters by device
+        const paramsByDevice: DeviceParameters = {};
+        const valuesByDevice: ParameterValues = {};
 
-        // Extract unique devices from history
-        const deviceMap = new Map<string, IThietBi>();
         historyList.forEach(item => {
-          if (item.thietBi?.maThietBi && !deviceMap.has(item.thietBi.maThietBi)) {
-            deviceMap.set(item.thietBi.maThietBi, item.thietBi);
+          const deviceId = item.thietBi?.maThietBi;
+          const paramId = item.thongSo?.maThongSo;
+
+          if (deviceId && paramId) {
+            // Initialize device entry if needed
+            if (!paramsByDevice[deviceId]) {
+              paramsByDevice[deviceId] = [];
+            }
+            if (!valuesByDevice[deviceId]) {
+              valuesByDevice[deviceId] = {};
+            }
+
+            // Add parameter if not already added
+            if (!paramsByDevice[deviceId].find(p => p.maThongSo === paramId)) {
+              paramsByDevice[deviceId].push(item.thongSo);
+            }
+
+            // Store parameter value
+            valuesByDevice[deviceId][paramId] = item.giaTri;
           }
         });
-        const uniqueDevices = Array.from(deviceMap.values());
-        if (uniqueDevices.length > 0) {
-          setDevices(uniqueDevices);
-        }
 
-        // Extract unique parameters from history
-        const paramMap = new Map<string, IThongSo>();
-        historyList.forEach(item => {
-          if (item.thongSo?.maThongSo && !paramMap.has(item.thongSo.maThongSo)) {
-            paramMap.set(item.thongSo.maThongSo, item.thongSo);
-          }
+        // Merge history parameters with existing device parameters
+        setDeviceParameters(prev => {
+          const merged = { ...prev };
+          Object.entries(paramsByDevice).forEach(([deviceId, historyParams]) => {
+            const existing = merged[deviceId] || [];
+            const combined = [...existing];
+            
+            historyParams.forEach(histParam => {
+              if (!combined.find(p => p.maThongSo === histParam.maThongSo)) {
+                combined.push(histParam);
+              }
+            });
+            
+            merged[deviceId] = combined;
+          });
+          return merged;
         });
-        const uniqueParams = Array.from(paramMap.values());
-        if (uniqueParams.length > 0) {
-          setParameters(uniqueParams);
-        }
 
-        // Bind values from history to parameter values
-        const newValues: { [key: string]: any } = {};
-        historyList.forEach(item => {
-          if (item.thongSo?.maThongSo) {
-            newValues[item.thongSo.maThongSo] = item?.giaTri;
-          }
-        });
-        setParameterValues(newValues);
+        setParameterValues(valuesByDevice);
       } else {
-        // No history data - keep existing devices but clear values
+        // No history data - keep existing device parameters but clear values
         setParameterValues({});
       }
     } catch (error) {
       console.error('Load history error:', error);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
-  const handleParameterChange = (maThongSo: string, value: string) => {
+  const handleParameterChange = (deviceId: string, maThongSo: string, value: string) => {
     setParameterValues(prev => ({
       ...prev,
-      [maThongSo]: value,
+      [deviceId]: {
+        ...prev[deviceId],
+        [maThongSo]: value,
+      },
     }));
   };
 
@@ -151,33 +185,45 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
         text: 'Lưu',
         onPress: async () => {
           try {
-            // Prepare data for each parameter
-            const savePromises = Object.entries(parameterValues).map(
-              ([maThongSo, giaTri]) => {
-                const device = devices[0]; // For now, use first device
-                const tsvhData: ITsvhDatum = {
-                  id: {
-                    maThongSoTb: '',
-                    ngayGio: selectedDate,
-                  },
-                  giaTri: parseFloat(giaTri),
-                  thietBi: {
-                    maThietBi: device.maThietBi,
-                  },
-                  thongSo: {
-                    maThongSo: maThongSo,
-                  },
-                  ngay: new Date(
-                    selectedDate.getFullYear(),
-                    selectedDate.getMonth(),
-                    selectedDate.getDate(),
-                  ),
-                  gio: selectedDate.getHours(),
-                  phut: selectedDate.getMinutes(),
-                };
-                return VanHanhService.save(tsvhData);
-              },
-            );
+            const savePromises: Promise<any>[] = [];
+
+            // Prepare data for each device and parameter
+            devices.forEach(device => {
+              const deviceId = device.maThietBi;
+              const deviceValues = parameterValues[deviceId];
+
+              if (deviceValues) {
+                Object.entries(deviceValues).forEach(([maThongSo, giaTri]) => {
+                  const tsvhData: ITsvhDatum = {
+                    id: {
+                      maThongSoTb: '',
+                      ngayGio: new Date(
+                      selectedDate.getFullYear(),
+                      selectedDate.getMonth(),
+                      selectedDate.getDate(),
+                      selectedDate.getHours(),
+                      selectedDate.getMinutes(),
+                    ),
+                    },
+                    giaTri: giaTri ? parseFloat(giaTri) : null,
+                    thietBi: {
+                      maThietBi: deviceId,
+                    },
+                    thongSo: {
+                      maThongSo: maThongSo,
+                    },
+                    ngay: new Date(
+                      selectedDate.getFullYear(),
+                      selectedDate.getMonth(),
+                      selectedDate.getDate(),
+                    ),
+                    gio: selectedDate.getHours(),
+                    phut: selectedDate.getMinutes(),
+                  };
+                  savePromises.push(VanHanhService.save(tsvhData));
+                });
+              }
+            });
 
             await Promise.all(savePromises);
             Alert.alert('Thành công', 'Đã lưu dữ liệu thành công');
@@ -228,7 +274,7 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
       onPress={() => navigation.navigate('DeviceSearchScreen')}>
       <Icon name="magnify" size={20} color="#999" />
       <Text style={styles.searchPlaceholder}>Tìm kiếm thiết bị...</Text>
-      <Icon name="qrcode-scan" size={20} color="#007AFF" />
+      {/* <Icon name="qrcode-scan" size={20} color="#007AFF" /> */}
     </TouchableOpacity>
   );
 
@@ -287,49 +333,64 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
     return (
       <>{renderDateTimePicker()}
         <ScrollView style={styles.content}>
-          {devices.map((device, index) => (
-            <View key={device.maThietBi || index} style={styles.deviceCard}>
-              <View style={styles.deviceHeader}>
-                {device.code && <Text style={styles.deviceCode}>{device.code}</Text>}
-                {device.tenThietBi && (
-                  <Text style={styles.deviceName}>{' - ' + device.tenThietBi}</Text>
-                )}
-              </View>
-            </View>
-          ))}
-          {loading ? (
+          {initialLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#007AFF" />
               <Text style={styles.loadingText}>Đang tải thông số...</Text>
             </View>
-          ) : parameters.length > 0 ? (
-            <View style={styles.parametersCard}>
-              <Text style={styles.sectionTitle}>Thông số vận hành</Text>
-              {parameters.map((param, index) => (
-                <View key={param.maThongSo || index} style={styles.parameterRow}>
-                  <View style={styles.parameterInfo}>
-                    <Text style={styles.parameterName}>{param.tenThongSo}</Text>
-                    {param.kyHieu && (
-                      <Text style={styles.parameterSymbol}>({param.kyHieu})</Text>
-                    )}
+          ) : (
+            devices.map((device, deviceIndex) => {
+              const deviceId = device.maThietBi;
+              const parameters = deviceParameters[deviceId] || [];
+              const values = parameterValues[deviceId] || {};
+
+              return (
+                <View key={deviceId || deviceIndex}>
+                  <View style={styles.deviceCard}>
+                    <View style={styles.deviceHeader}>
+                      {device.code && <Text style={styles.deviceCode}>{device.code}</Text>}
+                      {device.tenThietBi && (
+                        <Text style={styles.deviceName}>{' - ' + device.tenThietBi}</Text>
+                      )}
+                    </View>
                   </View>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      style={styles.parameterInput}
-                      placeholder="Nhập giá trị"
-                      placeholderTextColor="#999"
-                      keyboardType="numeric"
-                      value={parameterValues[param.maThongSo || ''] || ''}
-                      onChangeText={value =>
-                        handleParameterChange(param.maThongSo || '', value)
-                      }
-                    />
-                    {param.dvt && <Text style={styles.unit}>{param.dvt}</Text>}
-                  </View>
+
+                  {parameters.length > 0 ? (
+                    <View style={styles.parametersCard}>
+                      <Text style={styles.sectionTitle}>Thông số vận hành</Text>
+                      {parameters.map((param, index) => (
+                        <View key={param.maThongSo || index} style={styles.parameterRow}>
+                          <View style={styles.parameterInfo}>
+                            <Text style={styles.parameterName}>{param.tenThongSo}</Text>
+                            {param.kyHieu && (
+                              <Text style={styles.parameterSymbol}>({param.kyHieu})</Text>
+                            )}
+                          </View>
+                          <View style={styles.inputContainer}>
+                            <TextInput
+                              style={styles.parameterInput}
+                              placeholder="Nhập giá trị"
+                              placeholderTextColor="#999"
+                              keyboardType="numeric"
+                              value={
+                                values[param.maThongSo || ''] !== undefined && values[param.maThongSo || ''] !== null
+                                  ? String(values[param.maThongSo || ''])
+                                  : ''
+                              }
+                              onChangeText={value =>
+                                handleParameterChange(deviceId, param.maThongSo || '', value)
+                              }
+                            />
+                            {param.dvt && <Text style={styles.unit}>{param.dvt}</Text>}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
-              ))}
-            </View>
-          ) : null}
+              );
+            })
+          )}
         </ScrollView>
       </>
     );
@@ -339,7 +400,7 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderSearchHeader()}
       {renderDeviceInfo()}
-      {devices.length > 0 && parameters.length > 0 && (
+      {devices.length > 0 && Object.keys(deviceParameters).length > 0 && (
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Icon name="content-save" size={20} color="#fff" />
           <Text style={styles.saveButtonText}>Lưu dữ liệu</Text>
@@ -439,7 +500,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     margin: 16,
     marginTop: 0,
-    marginBottom: 80, // Space for save button
     padding: 16,
     borderRadius: 8,
     shadowColor: '#000',

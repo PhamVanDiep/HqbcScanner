@@ -3,9 +3,7 @@ export const API_CONFIG = {
   // Using adb reverse tcp:9000 tcp:9000 for USB-connected device
   // This forwards PC's port 9000 to device's localhost:9000
   BASE_URL: __DEV__
-    ? 'http://localhost:9000/hqbc-device/v1'  // USB device with adb reverse
-    // ? 'http://10.1.117.228:9000/hqbc-device/v1'  // WiFi device - same network
-    // ? 'http://10.0.2.2:9000/hqbc-device/v1'  // Android Emulator
+    ? 'http://192.168.100.178:9000/hqbc-device/v1'  // USB device with adb reverse
     : 'http://localhost:9000/hqbc-device/v1', // Production
   TIMEOUT: 30000,
 };
@@ -32,5 +30,9 @@ export const API_ENDPOINTS = {
   VAN_HANH: {
     GET_HISTORY: '/van-hanh/lich-su',
     CREATE: '/van-hanh',
+  },
+
+  USER: {
+    VERIFY: '/user/verify',
   },
 };

@@ -13,23 +13,11 @@ import {
   useCodeScanner,
 } from 'react-native-vision-camera';
 import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import deviceService from '../api/deviceService';
 import type {QRCodeData} from '../types';
-
-type RootStackParamList = {
-  QRScanner: undefined;
-  DeviceForm: {
-    DeviceID: string;
-    deviceName: string;
-    fields: any[];
-  };
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { ThietBiService } from '../services';
 
 const QRScannerScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
   const [hasPermission, setHasPermission] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const device = useCameraDevice('back');
@@ -68,33 +56,26 @@ const QRScannerScreen = () => {
       const qrData: QRCodeData = JSON.parse(qrValue);
       console.log(qrData);
       
-      if (!qrData.DeviceID) {
-        Alert.alert('Lỗi', 'QR code không hợp lệ: Thiếu mã thiết bị');
+      if (!qrData.QR_CODE) {
+        Alert.alert('Lỗi', 'QR code không hợp lệ: Thiếu mã QR_CODE');
         setIsProcessing(false);
         return;
       }
 
       // Call API to get device fields
-      const response = await deviceService.getDeviceFields(
-        qrData.DeviceID,
-        qrData.type,
+      const response = await ThietBiService.findByQRCode(
+        qrData.QR_CODE
       );
-
-      if (!response.success || !response.data) {
-        Alert.alert(
-          'Lỗi',
-          response.error?.message || 'Không thể lấy thông tin thiết bị',
-        );
+      if (response && response.length > 0) {
+        navigation.navigate('MainTabs', {
+          screen: 'DeviceTab',
+          params: { devices: response }
+        });
+      } else {
+        Alert.alert('Lỗi', 'Không tìm thấy thiết bị với mã QR đã quét.');
         setIsProcessing(false);
         return;
       }
-
-      // Navigate to form screen
-      navigation.navigate('DeviceForm', {
-        DeviceID: response.data.DeviceID,
-        deviceName: response.data.deviceName,
-        fields: response.data.fields,
-      });
     } catch (error: any) {
       console.error('Error processing QR code:', error);
       Alert.alert(

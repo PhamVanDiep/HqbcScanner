@@ -2,6 +2,7 @@ import React, {createContext, useState, useContext, useEffect} from 'react';
 import {AppState, AppStateStatus} from 'react-native';
 import {User, LoginRequest, RegisterRequest} from '../types';
 import {AuthService} from '../services';
+import UserService from '../services/user.service';
 import {BiometricUtils} from '../utils/biometric';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -27,17 +28,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   useEffect(() => {
     checkAuthStatus();
 
-    // Listen for app state changes to detect when token is cleared
+    // Listen for app state changes to detect when app returns from background
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    // Also check periodically in case token was cleared by API interceptor
-    const interval = setInterval(() => {
-      checkAuthStatus();
-    }, 3000); // Check every 3 seconds
 
     return () => {
       subscription.remove();
-      clearInterval(interval);
     };
   }, []);
 
@@ -50,19 +45,31 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const checkAuthStatus = async () => {
     try {
-      const storedUser = await AuthService.getStoredUser();
       const authenticated = await AuthService.isAuthenticated();
 
-      if (storedUser && authenticated) {
-        setUser(storedUser);
-        setIsAuthenticated(true);
+      if (authenticated) {
+        // Verify token with backend
+        const verifyData = await UserService.verify();
+        if (verifyData) {
+          // Token is valid, user is authenticated
+          const storedUser = await AuthService.getStoredUser();
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        } else {
+          // Verification failed or no data returned - logout
+          await AuthService.logout();
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } else {
-        // Token was cleared - logout
+        // No token - logout
         setUser(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Check auth status error:', error);
+      // Verification API call failed - logout
+      await AuthService.logout();
       setUser(null);
       setIsAuthenticated(false);
     } finally {
