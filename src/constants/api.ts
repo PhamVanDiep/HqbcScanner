@@ -1,10 +1,11 @@
 // API Configuration
 export const API_CONFIG = {
-  // Use your computer's IP address for real devices
-  // For Android emulator, use 10.0.2.2 instead of localhost
-  // For real devices, use your computer's IP (e.g., 'http://192.168.1.100:9000/palshop/v1')
+  // Using adb reverse tcp:9000 tcp:9000 for USB-connected device
+  // This forwards PC's port 9000 to device's localhost:9000
   BASE_URL: __DEV__
-    ? 'http://192.168.100.178:9000/hqbc-device/v1'  // Android emulator
+    ? 'http://localhost:9000/hqbc-device/v1'  // USB device with adb reverse
+    // ? 'http://10.1.117.228:9000/hqbc-device/v1'  // WiFi device - same network
+    // ? 'http://10.0.2.2:9000/hqbc-device/v1'  // Android Emulator
     : 'http://localhost:9000/hqbc-device/v1', // Production
   TIMEOUT: 30000,
 };
@@ -22,8 +23,14 @@ export const API_ENDPOINTS = {
   },
 
   // App Update (Android)
-  APP_UPDATE: {
-    CHECK_VERSION: '/app/version',
-    DOWNLOAD_APK: '/app/download',
+  THIET_BI: {
+    SEARCH: '/thiet-bi/search',
+    DETAIL: '/thiet-bi',
+    QR_CODE: '/thiet-bi/qr-code',
+  },
+
+  VAN_HANH: {
+    GET_HISTORY: '/van-hanh/lich-su',
+    CREATE: '/van-hanh',
   },
 };

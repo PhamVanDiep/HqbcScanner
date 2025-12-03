@@ -1,231 +1,200 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useAuth } from '../contexts/AuthContext';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {IThietBi, IThongSo} from '../types';
 
-interface RegisterScreenProps {
-  navigation: any;
+interface DeviceScreenProps {
+  navigation?: any;
+  route?: any;
 }
 
-const DeviceScreen: React.FC<RegisterScreenProps> = ({navigation}) => {
-  const {register, isLoading} = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    email: '',
-    userid: '',
-    tel: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+const DeviceScreen: React.FC<DeviceScreenProps> = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const [device, setDevice] = useState<IThietBi | null>(null);
+  const [parameters, setParameters] = useState<IThongSo[]>([]);
+  const [parameterValues, setParameterValues] = useState<{[key: string]: string}>({});
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    // Validation
-    if (
-      !formData.username.trim() ||
-      !formData.password.trim() ||
-      !formData.userid.trim()
-    ) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin bắt buộc');
-      return;
+  useEffect(() => {
+    // Get device from route params
+    if (route.params?.device) {
+      const selectedDevice = route.params.device as IThietBi;
+      setDevice(selectedDevice);
+      // TODO: Load parameters for this device
+      loadDeviceParameters(selectedDevice.maThietBi);
     }
+  }, [route.params]);
 
-    if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
-      return;
-    }
+  const loadDeviceParameters = async (maThietBi?: string) => {
+    if (!maThietBi) return;
 
-    if (formData.password.length< 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
-      return;
-    }
-
+    setLoading(true);
     try {
-      await register({
-        username: formData.username,
-        password: formData.password,
-        email: formData.email,
-        userid: formData.userid,
-        tel: formData.tel || undefined,
-      });
-    } catch (error: any) {
-      let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
+      // TODO: Call API to get device parameters
+      // const params = await ThietBiService.getParameters(maThietBi);
+      // setParameters(params);
 
-      if (error.message === 'Network Error') {
-        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra:\n' +
-          '- Server đã được khởi động chưa?\n' +
-          '- Địa chỉ IP trong cấu hình có đúng không?\n' +
-          '- Kết nối mạng có ổn định không?';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert('Đăng ký thất bại', errorMessage);
+      // Mock data for now
+      const mockParams: IThongSo[] = [
+        {maThongSo: 'TS001', tenThongSo: 'Nhiệt độ', dvt: '°C', kyHieu: 'T'},
+        {maThongSo: 'TS002', tenThongSo: 'Áp suất', dvt: 'bar', kyHieu: 'P'},
+        {maThongSo: 'TS003', tenThongSo: 'Lưu lượng', dvt: 'm3/h', kyHieu: 'Q'},
+      ];
+      setParameters(mockParams);
+    } catch (error) {
+      console.error('Load parameters error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({...prev, [field]: value}));
+  const handleParameterChange = (maThongSo: string, value: string) => {
+    setParameterValues(prev => ({
+      ...prev,
+      [maThongSo]: value,
+    }));
+  };
+
+  const handleSave = () => {
+    Alert.alert(
+      'Lưu dữ liệu',
+      'Bạn có chắc chắn muốn lưu các thông số này?',
+      [
+        {text: 'Hủy', style: 'cancel'},
+        {
+          text: 'Lưu',
+          onPress: async () => {
+            try {
+              // TODO: Call API to save parameter values
+              console.log('Saving values:', parameterValues);
+              Alert.alert('Thành công', 'Đã lưu dữ liệu thành công');
+            } catch (error) {
+              Alert.alert('Lỗi', 'Không thể lưu dữ liệu. Vui lòng thử lại.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const renderSearchHeader = () => (
+    <TouchableOpacity
+      style={styles.searchHeader}
+      onPress={() => navigation.navigate('DeviceSearchScreen')}>
+      <Icon name="magnify" size={20} color="#999" />
+      <Text style={styles.searchPlaceholder}>Tìm kiếm thiết bị...</Text>
+      <Icon name="qrcode-scan" size={20} color="#007AFF" />
+    </TouchableOpacity>
+  );
+
+  const renderDeviceInfo = () => {
+    if (!device) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Icon name="devices" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>
+            Chọn thiết bị để xem thông tin
+          </Text>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={() => navigation.navigate('DeviceSearchScreen')}>
+            <Icon name="magnify" size={20} color="#fff" />
+            <Text style={styles.searchButtonText}>Tìm kiếm thiết bị</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.content}>
+        <View style={styles.deviceCard}>
+          <Text style={styles.sectionTitle}>Thông tin thiết bị</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Tên thiết bị:</Text>
+            <Text style={styles.infoValue}>{device.tenThietBi}</Text>
+          </View>
+          {device.code && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Mã thiết bị:</Text>
+              <Text style={styles.infoValue}>{device.code}</Text>
+            </View>
+          )}
+          {device.maNhaMay && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Nhà máy:</Text>
+              <Text style={styles.infoValue}>{device.maNhaMay}</Text>
+            </View>
+          )}
+          {device.qrCode && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>QR Code:</Text>
+              <Text style={styles.infoValue}>{device.qrCode}</Text>
+            </View>
+          )}
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Đang tải thông số...</Text>
+          </View>
+        ) : parameters.length > 0 ? (
+          <View style={styles.parametersCard}>
+            <Text style={styles.sectionTitle}>Thông số vận hành</Text>
+            {parameters.map((param, index) => (
+              <View key={param.maThongSo || index} style={styles.parameterRow}>
+                <View style={styles.parameterInfo}>
+                  <Text style={styles.parameterName}>{param.tenThongSo}</Text>
+                  {param.kyHieu && (
+                    <Text style={styles.parameterSymbol}>({param.kyHieu})</Text>
+                  )}
+                </View>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.parameterInput}
+                    placeholder="Nhập giá trị"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={parameterValues[param.maThongSo || ''] || ''}
+                    onChangeText={value =>
+                      handleParameterChange(param.maThongSo || '', value)
+                    }
+                  />
+                  {param.dvt && (
+                    <Text style={styles.unit}>{param.dvt}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSave}>
+              <Icon name="content-save" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Lưu dữ liệu</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </ScrollView>
+    );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Đăng ký tài khoản</Text>
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Icon
-            name="account"
-            size={24}
-            color="#666"
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Tên đăng nhập *"
-            placeholderTextColor="#999"
-            value={formData.userid}
-            onChangeText={value => updateFormData('userid', value)}
-            autoCapitalize="none"
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Icon name="email" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#999"
-            value={formData.email}
-            onChangeText={value => updateFormData('email', value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Icon
-            name="account-circle"
-            size={24}
-            color="#666"
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Họ và tên *"
-            placeholderTextColor="#999"
-            value={formData.username}
-            onChangeText={value => updateFormData('username', value)}
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Icon name="phone" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Số điện thoại"
-            placeholderTextColor="#999"
-            value={formData.tel}
-            onChangeText={value => updateFormData('tel', value)}
-            keyboardType="phone-pad"
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Icon name="lock" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Mật khẩu *"
-            placeholderTextColor="#999"
-            value={formData.password}
-            onChangeText={value => updateFormData('password', value)}
-            secureTextEntry={!showPassword}
-            editable={!isLoading}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}>
-            <Icon
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color="#666"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Icon name="lock-check" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Xác nhận mật khẩu *"
-            placeholderTextColor="#999"
-            value={formData.confirmPassword}
-            onChangeText={value => updateFormData('confirmPassword', value)}
-            secureTextEntry={!showConfirmPassword}
-            editable={!isLoading}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={styles.eyeIcon}>
-            <Icon
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color="#666"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.registerButton, isLoading && styles.disabledButton]}
-          onPress={handleRegister}
-          disabled={isLoading}>
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.registerButtonText}>Đăng ký</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Đã có tài khoản? </Text>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            disabled={isLoading}>
-            <Text style={styles.loginLink}>Đăng nhập ngay</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {renderSearchHeader()}
+      {renderDeviceInfo()}
+    </SafeAreaView>
   );
 };
 
@@ -234,84 +203,156 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  header: {
-    backgroundColor: '#fff',
-    padding: 30,
-    paddingTop: 60,
+  searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    gap: 12,
   },
-  backButton: {
-    // marginBottom: 20,
-    marginRight: 20,
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 16,
+    color: '#999',
   },
-  title: {
-    fontSize: 28,
+  content: {
+    flex: 1,
+  },
+  deviceCard: {
+    backgroundColor: '#fff',
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 16,
   },
-  subtitle: {
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  infoLabel: {
+    width: 120,
     fontSize: 14,
     color: '#666',
-    marginTop: 8,
   },
-  form: {
+  infoValue: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  parametersCard: {
     backgroundColor: '#fff',
-    padding: 30,
-    marginTop: 10,
+    margin: 16,
+    marginTop: 0,
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  parameterRow: {
+    marginBottom: 16,
+  },
+  parameterInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  parameterName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  parameterSymbol: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginBottom: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
+  parameterInput: {
     flex: 1,
-    height: 50,
     fontSize: 16,
     color: '#333',
+    paddingVertical: 10,
   },
-  eyeIcon: {
-    padding: 5,
+  unit: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
   },
-  registerButton: {
-    backgroundColor: '#2196F3',
-    borderRadius: 10,
-    height: 50,
+  saveButton: {
+    flexDirection: 'row',
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    padding: 40,
   },
-  disabledButton: {
-    opacity: 0.6,
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 24,
   },
-  registerButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  footer: {
+  searchButton: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  footerText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  loginLink: {
-    color: '#2196F3',
-    fontSize: 14,
+  searchButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

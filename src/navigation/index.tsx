@@ -3,16 +3,24 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import DeviceFormScreen from '../screens/DeviceFormScreen';
-import type {Field} from '../types';
-import DeviceScreen from '../screens/DeviceScreen';
+import DeviceSearchScreen from '../screens/DeviceSearchScreen';
+import MainTabNavigator from './MainTabNavigator';
+import type {Field, IThietBi} from '../types';
 
 export type RootStackParamList = {
+  MainTabs: {
+    screen?: string;
+    params?: {
+      device?: IThietBi;
+    };
+  } | undefined;
   QRScanner: undefined;
   DeviceForm: {
     deviceId: string;
     deviceName: string;
     fields: Field[];
   };
+  DeviceSearchScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -21,7 +29,7 @@ const Navigation = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="DeviceScreen"
+        initialRouteName="MainTabs"
         screenOptions={{
           headerStyle: {
             backgroundColor: '#007AFF',
@@ -32,6 +40,13 @@ const Navigation = () => {
           },
         }}>
         <Stack.Screen
+          name="MainTabs"
+          component={MainTabNavigator}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="QRScanner"
           component={QRScannerScreen}
           options={{
@@ -40,19 +55,18 @@ const Navigation = () => {
           }}
         />
         <Stack.Screen
+          name="DeviceSearchScreen"
+          component={DeviceSearchScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="DeviceForm"
           component={DeviceFormScreen}
           options={{
             title: 'Thông tin thiết bị',
-            headerShown: false, // Using custom header in DeviceFormScreen
-          }}
-        />
-        <Stack.Screen
-          name="DeviceScreen"
-          component={DeviceScreen}
-          options={{
-            title: 'Thông tin thiết bị',
-            headerShown: false, // Using custom header in DeviceScreen
+            headerShown: false,
           }}
         />
       </Stack.Navigator>

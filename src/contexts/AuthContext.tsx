@@ -1,4 +1,5 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
+import {AppState, AppStateStatus} from 'react-native';
 import {User, LoginRequest, RegisterRequest} from '../types';
 import {AuthService} from '../services';
 import {BiometricUtils} from '../utils/biometric';
@@ -25,7 +26,27 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   useEffect(() => {
     checkAuthStatus();
+
+    // Listen for app state changes to detect when token is cleared
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Also check periodically in case token was cleared by API interceptor
+    const interval = setInterval(() => {
+      checkAuthStatus();
+    }, 3000); // Check every 3 seconds
+
+    return () => {
+      subscription.remove();
+      clearInterval(interval);
+    };
   }, []);
+
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (nextAppState === 'active') {
+      // Check auth when app comes to foreground
+      checkAuthStatus();
+    }
+  };
 
   const checkAuthStatus = async () => {
     try {
@@ -35,9 +56,15 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       if (storedUser && authenticated) {
         setUser(storedUser);
         setIsAuthenticated(true);
+      } else {
+        // Token was cleared - logout
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Check auth status error:', error);
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
     }

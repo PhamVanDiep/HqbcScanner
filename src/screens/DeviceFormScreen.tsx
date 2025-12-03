@@ -133,6 +133,7 @@ const DeviceFormScreen = () => {
               value={String(formData[field.id] || '')}
               onChangeText={value => updateField(field.id, value)}
               placeholder={field.placeholder}
+              placeholderTextColor="#999"
               keyboardType={field.type === 'number' ? 'numeric' : 'default'}
             />
             {hasError && <Text style={styles.errorText}>{errors[field.id]}</Text>}
@@ -155,6 +156,7 @@ const DeviceFormScreen = () => {
               value={String(formData[field.id] || '')}
               onChangeText={value => updateField(field.id, value)}
               placeholder={field.placeholder}
+              placeholderTextColor="#999"
               multiline
               numberOfLines={4}
               textAlignVertical="top"

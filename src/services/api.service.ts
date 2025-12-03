@@ -2,6 +2,7 @@ import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {API_CONFIG, API_ENDPOINTS} from '../constants/api';
 import {logError} from '../utils/errorHandler';
+import { ApiResponse } from '../types';
 
 class ApiService {
   private axiosInstance: AxiosInstance;
@@ -48,45 +49,25 @@ class ApiService {
         return response;
       },
       async error => {
-        // const originalRequest = error.config;
+        // Handle token expiration (401 Unauthorized)
+        if (error.response?.status === 401) {
+          // Token expired or invalid - clear auth data and force logout
+          await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
 
-        // // Log error
-        // logError(error, `API Request: ${originalRequest?.url}`);
+          // Log for debugging
+          if (__DEV__) {
+            console.log('Token expired - clearing auth data');
+          }
+        }
 
-        // // Handle token expiration
-        // if (error.response?.status === 401 && !originalRequest._retry) {
-        //   originalRequest._retry = true;
-
-        //   try {
-        //     const refreshToken = await AsyncStorage.getItem('refreshToken');
-        //     if (refreshToken) {
-        //       const response = await axios.post(
-        //         `${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`,
-        //         {refreshToken},
-        //       );
-
-        //       // Extract tokens from backend response structure
-        //       const newAccessToken = response.data.data?.accessToken || response.data.accessToken;
-        //       const newRefreshToken = response.data.data?.refreshToken || response.data.refreshToken;
-
-        //       if (newAccessToken) {
-        //         await AsyncStorage.setItem('accessToken', newAccessToken);
-        //         if (newRefreshToken) {
-        //           await AsyncStorage.setItem('refreshToken', newRefreshToken);
-        //         }
-
-        //         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        //         return this.axiosInstance(originalRequest);
-        //       }
-        //     }
-        //   } catch (refreshError) {
-        //     // Token refresh failed, redirect to login
-        //     await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
-        //     logError(refreshError, 'Token refresh failed');
-        //     // You might want to dispatch a logout action here
-        //     return Promise.reject(refreshError);
-        //   }
-        // }
+        // Log errors in development
+        if (__DEV__) {
+          console.error('API Error:', {
+            url: error.config?.url,
+            status: error.response?.status,
+            message: error.message,
+          });
+        }
 
         return Promise.reject(error);
       },
@@ -94,8 +75,8 @@ class ApiService {
   }
 
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.axiosInstance.get(url, config);
-    return response.data;
+    const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.get(url, config);
+    return response.data.data as T;
   }
 
   public async post<T>(

@@ -78,9 +78,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Icon name="store" size={80} color="#2196F3" />
-        <Text style={styles.title}>PalShop</Text>
-        <Text style={styles.subtitle}>Quản lý cửa hàng thông minh</Text>
+        {/* <Icon name="store" size={80} color="#2196F3" /> */}
+        <Text style={styles.title}>Quản lý vận hành thiết bị</Text>
+        {/* <Text style={styles.subtitle}>Quản lý cửa hàng thông minh</Text> */}
       </View>
 
       <View style={styles.form}>
@@ -140,7 +140,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
           )}
         </TouchableOpacity>
 
-        {biometricAvailable && (
+        {/* {biometricAvailable && (
           <TouchableOpacity
             style={styles.biometricButton}
             onPress={handleBiometricLogin}
@@ -156,7 +156,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
               Đăng nhập bằng {biometricType}
             </Text>
           </TouchableOpacity>
-        )}
+        )} */}
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Chưa có tài khoản? </Text>
