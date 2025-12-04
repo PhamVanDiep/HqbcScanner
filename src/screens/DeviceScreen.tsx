@@ -357,7 +357,7 @@ const DeviceScreen: React.FC<DeviceScreenProps> = () => {
 
                   {parameters.length > 0 ? (
                     <View style={styles.parametersCard}>
-                      <Text style={styles.sectionTitle}>Thông số vận hành</Text>
+                      {/* <Text style={styles.sectionTitle}>Thông số vận hành</Text> */}
                       {parameters.map((param, index) => (
                         <View key={param.maThongSo || index} style={styles.parameterRow}>
                           <View style={styles.parameterInfo}>
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   deviceCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#BEDBFF',
     margin: 16,
     marginBottom: 8,
     padding: 16,

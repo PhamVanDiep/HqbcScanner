@@ -1,10 +1,10 @@
 // API Configuration
 export const API_CONFIG = {
-  // Using adb reverse tcp:9000 tcp:9000 for USB-connected device
-  // This forwards PC's port 9000 to device's localhost:9000
+  // Development: use local network IP for testing on physical device
+  // Production: use server IP accessible from physical device
   BASE_URL: __DEV__
-    ? 'http://192.168.100.178:9000/hqbc-device/v1'  // USB device with adb reverse
-    : 'http://localhost:9000/hqbc-device/v1', // Production
+    ? 'http://192.168.100.178:9000/hqbc-device/v1'  // Development
+    : 'http://10.1.117.228/hqbc-device/v1', // Production
   TIMEOUT: 30000,
 };
 
