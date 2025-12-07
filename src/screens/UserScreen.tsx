@@ -9,9 +9,19 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useAuth} from '../contexts/AuthContext';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const UserScreen: React.FC = () => {
   const {user, logout} = useAuth();
+  const navigation = useNavigation<NavigationProp>();
+
+  const handleChangePassword = () => {
+    navigation.navigate('ChangePassword');
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -46,25 +56,13 @@ const UserScreen: React.FC = () => {
         {user?.phone && <Text style={styles.phone}>{user.phone}</Text>}
       </View>
 
-      {/* <View style={styles.section}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Icon name="account-edit" size={24} color="#333" />
-          <Text style={styles.menuText}>Chỉnh sửa thông tin</Text>
-          <Icon name="chevron-right" size={24} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleChangePassword}>
           <Icon name="lock" size={24} color="#333" />
           <Text style={styles.menuText}>Đổi mật khẩu</Text>
           <Icon name="chevron-right" size={24} color="#999" />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Icon name="fingerprint" size={24} color="#333" />
-          <Text style={styles.menuText}>Sinh trắc học</Text>
-          <Icon name="chevron-right" size={24} color="#999" />
-        </TouchableOpacity>
-      </View> */}
+      </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Icon name="logout" size={24} color="#fff" />

@@ -5,6 +5,7 @@ import {
   AuthResponseData,
   LoginRequest,
   RegisterRequest,
+  ChangePasswordRequest,
   ApiResponse,
   User,
 } from '../types';
@@ -14,10 +15,10 @@ class AuthService {
   // Transform backend user info to app User format
   private transformUserInfo(backendData: AuthResponseData): AuthResponse {
     const user: User = {
-      id: backendData.info.userid,
-      username: backendData.info.username,
-      email: backendData.info.email,
-      phone: backendData.info.phoneNumber,
+      id: backendData.info?.userid,
+      username: backendData.info?.username,
+      email: backendData.info?.email,
+      phone: backendData.info?.tel,
     };
 
     return {
@@ -70,7 +71,7 @@ class AuthService {
       const response = await ApiService.get<ApiResponse<{enabled: boolean}>>(
         API_ENDPOINTS.AUTH.CHECK_BIOMETRIC,
       );
-      return response.data.enabled;
+      return response.data?.enabled || false;
     } catch (error) {
       return false;
     }
@@ -82,7 +83,7 @@ class AuthService {
 
   private async saveAuthData(authData: AuthResponse): Promise<void> {
     await AsyncStorage.multiSet([
-      ['accessToken', authData.accessToken],
+      ['accessToken', authData.accessToken || ''],
       ['user', JSON.stringify(authData.user)],
     ]);
   }

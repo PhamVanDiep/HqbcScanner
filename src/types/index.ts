@@ -20,8 +20,15 @@ export interface AuthResponseData {
   expiresIn?: string;
 }
 
+export interface User {
+  id?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface AuthResponse {
-  user?: IQUser;
+  user?: User;
   accessToken?: string;
   refreshToken?: string;
 }
@@ -38,6 +45,11 @@ export interface RegisterRequest {
   email?: string;
   userid?: string;
   tel?: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
 }
 
 // API Response Types

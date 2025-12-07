@@ -34,5 +34,6 @@ export const API_ENDPOINTS = {
 
   USER: {
     VERIFY: '/user/verify',
+    CHANGE_PASSWORD: '/user/change-password',
   },
 };

@@ -1,8 +1,9 @@
 import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Alert} from 'react-native';
 import {API_CONFIG, API_ENDPOINTS} from '../constants/api';
 import {logError} from '../utils/errorHandler';
-import { ApiResponse } from '../types';
+import {ApiResponse} from '../types';
 
 class ApiService {
   private axiosInstance: AxiosInstance;
@@ -47,6 +48,7 @@ class ApiService {
             data: response.data,
           });
         }
+
         return response;
       },
       async error => {
@@ -68,6 +70,15 @@ class ApiService {
             status: error.response?.status,
             message: error.message,
           });
+        }
+
+        // Check if backend returned an error (code !== 200)
+        const apiResponse = error.response.data as ApiResponse<any>;
+        if (apiResponse.code && apiResponse.code !== 200 && apiResponse.code !== 401) {
+          // Show alert with error message from backend
+          if (apiResponse.message) {
+            Alert.alert('Lỗi', apiResponse.message);
+          }
         }
 
         return Promise.reject(error);

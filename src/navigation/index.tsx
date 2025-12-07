@@ -3,6 +3,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import DeviceSearchScreen from '../screens/DeviceSearchScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import MainTabNavigator from './MainTabNavigator';
 import type {IThietBi} from '../types';
 
@@ -19,6 +20,7 @@ export type RootStackParamList = {
     deviceName: string;
   };
   DeviceSearchScreen: undefined;
+  ChangePassword: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +59,14 @@ const Navigation = () => {
           component={DeviceSearchScreen}
           options={{
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePasswordScreen}
+          options={{
+            title: 'Đổi mật khẩu',
+            headerShown: true,
           }}
         />
         {/* <Stack.Screen

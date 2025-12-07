@@ -66,6 +66,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({navigation}) => {
         tel: formData.tel || undefined,
       });
     } catch (error: any) {
+      // Skip alert if already shown by API interceptor
+      if (error.alertShown) {
+        return;
+      }
+
       let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
 
       if (error.message === 'Network Error') {

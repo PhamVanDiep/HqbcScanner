@@ -48,6 +48,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
     try {
       await login({username, password});
     } catch (error: any) {
+      // Skip alert if already shown by API interceptor
+      if (error.alertShown) {
+        return;
+      }
+
       let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
 
       if (error.message === 'Network Error') {
