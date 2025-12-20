@@ -4,7 +4,7 @@ export const API_CONFIG = {
   // Production: use server IP accessible from physical device
   BASE_URL: __DEV__
     ? 'http://192.168.100.178:9000/hqbc-device/v1'  // Development
-    : 'http://10.1.117.228/hqbc-device/v1', // Production
+    : 'http://10.32.116.38:9000/hqbc-device/v1', // Production
   TIMEOUT: 30000,
 };
 

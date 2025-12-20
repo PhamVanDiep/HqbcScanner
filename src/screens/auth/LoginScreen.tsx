@@ -176,14 +176,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({navigation}) => {
           </TouchableOpacity>
         )} */}
 
-        <View style={styles.footer}>
+        {/*<View style={styles.footer}>
           <Text style={styles.footerText}>Chưa có tài khoản? </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('Register')}
             disabled={isLoading}>
             <Text style={styles.registerLink}>Đăng ký ngay</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
     </View>
   );
